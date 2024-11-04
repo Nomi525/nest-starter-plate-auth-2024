@@ -1,0 +1,35 @@
+{
+  "compilerOptions": {
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "module": "commonjs",
+    "declaration": true,
+    "removeComments": true,
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
+    "target": "es2020",
+    "sourceMap": true,
+    "outDir": "./dist",
+    "incremental": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "strictNullChecks": true,
+    "strictBindCallApply": true,
+    "forceConsistentCasingInFileNames": true,
+    "noFallthroughCasesInSwitch": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "baseUrl": "./src",
+    "paths": {
+      "*": ["*", "*/index"],
+      // "@modules/*": ["modules/*"],
+      // "@common/*": ["common/*"],
+      // "@assets/*": ["assets/*"],
+      // "@middlewares/*": ["middlewares/*"],
+      // "@generated/*": ["generated/*"],
+      // "@contracts/*": ["contracts/*"]
+    },
+    "strictPropertyInitialization": false
+  },
+  "include": ["src", "prisma/**/*.ts", "scripts/**/*.ts"]
+}

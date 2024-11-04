@@ -1,0 +1,451 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                      String                @id @default(uuid()) @db.Uuid
+  first_name              String?
+  last_name               String?
+  email                   String?               @unique
+  pwd_hash                String?
+  email_confirmed         Boolean               @default(false)
+  phone_confirmed         Boolean               @default(false)
+  phoneNumber             String?               @unique
+  role                    UserRole
+  AuthToken               AuthToken[]
+  uploadedFiles           File[]                @relation("UserUploadedFiles")
+  orders                  Order[]
+  SafeWallet              SafeWallet?
+  transactions            Transaction[]
+  UserConfirmation        UserConfirmation?
+  safeWallet_confirmation Boolean               @default(false)
+  CpcEmployee             CpcEmployee?
+  created_at              DateTime              @default(now())
+  updated_at              DateTime              @default(now()) @updatedAt
+  Vendor                  Vendor?
+  CaChingNotification     CaChingNotification[]
+  ShoppingCart            ShoppingCart[]
+  Preference              Preference[]
+  image_id                String?               @db.Uuid
+  image                   Image?                @relation(fields: [image_id], references: [id])
+  File                    File[]
+
+  @@index([email])
+}
+
+model WeeklyPayout {
+  id               String             @id @default(uuid()) @db.Uuid
+  created_at       DateTime           @default(now())
+  payouts_status   PayoutStatus
+  WeeklyUserPayout WeeklyUserPayout[]
+
+  @@index([created_at])
+}
+
+enum PayoutStatus {
+  PLANNED
+  IN_PROGRESS
+  FINISHED
+  FAILED
+}
+
+model CpcEmployee {
+  id                    String             @id @default(uuid()) @db.Uuid
+  created_at            DateTime           @default(now())
+  user_id               String             @unique @db.Uuid
+  user                  User               @relation(fields: [user_id], references: [id])
+  empoyment_active      Boolean
+  employment_start_date DateTime
+  WeeklyUserPayout      WeeklyUserPayout[]
+}
+
+model WeeklyUserPayout {
+  id             String       @id @default(uuid()) @db.Uuid
+  created_at     DateTime     @default(now())
+  employee_id    String       @db.Uuid
+  employee       CpcEmployee  @relation(fields: [employee_id], references: [id])
+  payout_id      String       @db.Uuid
+  payout         WeeklyPayout @relation(fields: [payout_id], references: [id])
+  transaction_id String?      @unique @db.Uuid
+  transaction    Transaction? @relation(fields: [transaction_id], references: [id])
+  payouts_status PayoutStatus
+}
+
+enum TxCategory {
+  NOT_SPECIFIED
+  PAYOUT
+  ONRAMP
+  CHANNEL_CLOSE
+  CHANNEL_OPEN
+  WALLET_CREATION
+  USER_SEND_ONCHAIN
+  USER_SEND_CHANNEL
+  NFT_REVEAL
+}
+
+model Transaction {
+  id                  String               @id @default(uuid()) @db.Uuid
+  created_at          DateTime             @default(now())
+  updated_at          DateTime             @updatedAt
+  type                TransactionType
+  status              TransactionStatus    @default(FINISHED)
+  cheddrAmount        Decimal              @db.Decimal(78, 0)
+  userId              String?              @db.Uuid
+  user                User?                @relation(fields: [userId], references: [id])
+  txId                String?
+  receiverAddress     String?
+  channelId           String? // on-chain bytes32 formatted as 0x71055430...
+  sequenceNumber      Int?
+  note                String
+  txCategory          TxCategory?
+  WeeklyUserPayout    WeeklyUserPayout?
+  CaChingNotification CaChingNotification?
+  Order               Order?
+
+  @@index([receiverAddress, userId, created_at])
+}
+
+enum TransactionStatus {
+  PLANNED
+  IN_PROGRESS
+  FINISHED
+  FAILED
+}
+
+model CaChingNotification {
+  id            String       @id @default(uuid()) @db.Uuid
+  created_at    DateTime     @default(now())
+  userId        String?      @db.Uuid
+  user          User?        @relation(fields: [userId], references: [id])
+  transactionId String       @unique @db.Uuid
+  Transaction   Transaction? @relation(fields: [transactionId], references: [id])
+  received      DateTime?
+  message       String
+
+  @@index([userId, received])
+}
+
+enum CaChingStatus {
+  PLANNED
+  FINISHED
+}
+
+enum TransactionType {
+  ORDER
+  PAYMENT_CHANNEL
+  ON_CHAIN
+}
+
+model UserConfirmation {
+  id                           String    @id @default(uuid()) @db.Uuid
+  created_at                   DateTime  @default(now())
+  user_id                      String    @unique @db.Uuid
+  user                         User      @relation(fields: [user_id], references: [id])
+  confirm_email_code           String?
+  confirm_email_code_sent      DateTime?
+  confirm_email_code_timelimit DateTime?
+  confirm_phone_code           String?
+  confirm_phone_code_sent      DateTime?
+  confirm_phone_code_timelimit DateTime?
+  reset_code                   String?
+  reset_code_timelimit         DateTime?
+  change_email_to              String?
+  change_email_code            String?
+  change_email_code_timelimit  DateTime?
+  magic_login_code             String?
+  magic_login_code_timelimit   DateTime?
+}
+
+model Vendor {
+  id         String           @id @default(uuid()) @db.Uuid
+  name       String
+  location   String? // correct here
+  user_id    String           @unique @db.Uuid
+  orders     Order[]
+  schedules  VendorSchedule[]
+  user       User             @relation(fields: [user_id], references: [id])
+  created_at DateTime         @default(now())
+  updated_at DateTime         @updatedAt
+  deleted Boolean          @default(false)
+  MenuItem   MenuItem[]
+  image_id   String?          @db.Uuid // correct here
+  image      Image?           @relation(fields: [image_id], references: [id])
+  ImageVariation ImageVariation[]
+  File File[]
+}
+
+model MenuItem {
+  id           String         @id @default(uuid()) @db.Uuid
+  created_at   DateTime       @default(now())
+  updated_at   DateTime       @updatedAt
+  deleted Boolean  @default(false)
+  name         String
+  description  String?
+  priceCents   Int
+  categoryId   String         @db.Uuid
+  available    Boolean        @default(true)
+  vendor_id    String         @db.Uuid
+  image_id     String?        @db.Uuid
+  image        Image?         @relation(fields: [image_id], references: [id])
+  category     Category       @relation(fields: [categoryId], references: [id])
+  vendor       Vendor         @relation(fields: [vendor_id], references: [id])
+  ShoppingCart ShoppingCart[]
+  OrderItem    OrderItem[]
+  File File[]
+}
+
+model ShoppingCart {
+  id           String   @id @default(uuid()) @db.Uuid
+  menu_item_id String   @db.Uuid
+  quantity     Int
+  user_id      String   @db.Uuid
+  user         User     @relation(fields: [user_id], references: [id])
+  menuItem     MenuItem @relation(fields: [menu_item_id], references: [id])
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+  deleted   Boolean  @default(false)
+
+  @@unique([user_id, menu_item_id])
+}
+
+model OrderItem {
+  id         String   @id @default(uuid()) @db.Uuid
+  created_at DateTime @default(now())
+  name       String // copy from menuItem
+  priceCents Int // copy from menuItem
+  quantity   Int // copy from shopping cart
+  orderId    String   @db.Uuid
+  order      Order    @relation(fields: [orderId], references: [id])
+  menuItemId String   @db.Uuid
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
+}
+
+enum OrderType {
+  PLAIN_AMOUNT
+  VENDOR_CREATED
+  USER_CREATED
+}
+
+model Order {
+  id                 String             @id @default(uuid()) @db.Uuid
+  created_at         DateTime           @default(now())
+  updated_at         DateTime           @updatedAt
+  completed_at       DateTime?
+  totalAmount        Int // Total amount in cents
+  cheddrAmount       Decimal            @db.Decimal(78, 0) // Total amount in curds
+  status             OrderStatus
+  vendorConfirmation VendorConfirmation @default(INITIAL)
+  vendorId           String             @db.Uuid
+  vendor             Vendor             @relation(fields: [vendorId], references: [id])
+  transactioinId     String?            @unique @db.Uuid
+  transaction        Transaction?       @relation(fields: [transactioinId], references: [id])
+  userId             String?            @db.Uuid // user who created it
+  user               User?              @relation(fields: [userId], references: [id])
+  OrderItems         OrderItem[]
+  orderType          OrderType
+  rotatingId         String             @default("000")
+  pickup_location    String?
+  pickup_time        String?
+  pickup_day         String?
+}
+
+model Image {
+  id         String           @id @default(uuid()) @db.Uuid
+  created_at DateTime         @default(now())
+  variations ImageVariation[]
+  File       File?            @relation(fields: [fileId], references: [id])
+  fileId     String?          @db.Uuid
+  User User[]
+  Vendor Vendor[]
+  MenuItem MenuItem[]
+}
+
+model File {
+  id               String           @id @default(uuid()) @db.Uuid
+  created_at       DateTime         @default(now())
+  diskName         String
+  originalFileName String
+  size             BigInt
+  uploader_user_id String?          @db.Uuid
+  fileFormat       String?
+  updatedAt        DateTime?        @updatedAt
+  uploader         User?            @relation("UserUploadedFiles", fields: [uploader_user_id], references: [id])
+  MenuItem         MenuItem[]
+  User             User[]
+  Image            Image[]
+  ImageVariation   ImageVariation[]
+
+  Vendor Vendor[]
+}
+
+enum ImageSize {
+  ORIGINAL
+  THUMBNAIL
+  MEDIUM
+  LARGE
+}
+
+model ImageVariation {
+  id               String    @id @default(uuid()) @db.Uuid
+  created_at       DateTime  @default(now())
+  originalImageId  String    @db.Uuid
+  originalImage    Image     @relation(fields: [originalImageId], references: [id])
+  size             ImageSize
+  filePath         String
+  fileId           String    @db.Uuid
+  file             File      @relation(fields: [fileId], references: [id])
+  resolutionWidth  Int?
+  resolutionHeight Int?
+  aspectRatio      Float?
+  fileFormat       String?
+  Vendor           Vendor[]
+}
+
+enum Weekday {
+  SUN
+  MON
+  TUE
+  WED
+  THU
+  FRI
+  SAT
+}
+
+model VendorSchedule {
+  id           String    @id @default(uuid()) @db.Uuid
+  startTime    String // Store as "HH:MM" ISO time string
+  endTime      String // Store as "HH:MM" ISO time string
+  active_days  Weekday[] // Enum for days of the week
+  company_name String
+  address      String
+  vendorId     String    @db.Uuid
+  vendor       Vendor    @relation(fields: [vendorId], references: [id])
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+  active       Boolean   @default(true) // paused or not, think like alarm clock settings
+}
+
+model Category {
+  id            String        @id @default(uuid()) @db.Uuid
+  category_name String
+  created_at    DateTime      @default(now())
+  updated_at    DateTime      @updatedAt
+  deleted    Boolean       @default(false)
+  subcategory   SubCategory[]
+  MenuItem      MenuItem[]
+}
+
+model SubCategory {
+  id               String   @id @default(uuid()) @db.Uuid
+  subcategory_name String
+  categoryId       String   @db.Uuid
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+  deleted       Boolean  @default(false)
+  category         Category @relation(fields: [categoryId], references: [id])
+}
+
+model AuthToken {
+  id         String    @id @default(uuid()) @db.Uuid
+  created_at DateTime  @default(now())
+  expires_at DateTime?
+  user_id    String    @db.Uuid
+  user       User      @relation(fields: [user_id], references: [id])
+}
+
+model SafeWallet {
+  id                String   @id @default(uuid()) @db.Uuid
+  server_salt       String
+  safeWalletAddress String   @unique
+  user_EOA_address  String   @unique
+  user_id           String   @unique @db.Uuid
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+  deleted        Boolean  @default(false)
+  user              User     @relation(fields: [user_id], references: [id])
+  siweNonce         String?
+
+  @@index([user_EOA_address])
+}
+
+enum UserRole {
+  Guest
+  User
+  Vendor
+  Hr
+  Admin
+}
+
+enum OrderStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+
+enum VendorConfirmation {
+  INITIAL
+  CONFIRMED
+  DECLINED
+}
+
+enum ChannelStatus {
+  PLANNED
+  OPEN
+  FAILED
+  CLOSED
+}
+
+model Channel {
+  id                  String             @id @default(uuid()) @db.Uuid
+  created_at          DateTime           @default(now())
+  updated_at          DateTime           @updatedAt
+  channelId           String             @unique // on-chain bytes32 formatted as 0x71055430...
+  owner               String // ethereum address
+  balance             Decimal            @db.Decimal(78, 0)
+  expiryTimestamp     Int
+  sequenceNumber      Int
+  recipients          ChannelRecipient[]
+  userSignature       String
+  sequencerSignature  String
+  signatureTimestamp  Int // precision is extremely important here. we are storing a unix timestamp as integer, and can not afford to lose any leapseconds BS
+  status              ChannelStatus
+  channelClosureJobId String?
+
+  @@index([owner, status])
+}
+
+model ChannelRecipient {
+  id               String  @id @default(uuid()) @db.Uuid
+  recipientAddress String
+  balance          Decimal @db.Decimal(78, 0)
+  channelId        String  @db.Uuid
+  channel          Channel @relation(fields: [channelId], references: [id])
+
+  @@unique([recipientAddress, channelId])
+  @@index([recipientAddress])
+}
+
+enum PreferenceKey {
+  SHOW_BALANCE
+  SHARE_FULLNAME
+  SHARE_FIRSTNAME
+  SHARE_PROFILE_IMAGE
+  SEND_UPDATES
+}
+
+model Preference {
+  id        String        @id @default(uuid()) @db.Uuid
+  userId    String        @db.Uuid
+  user      User          @relation(fields: [userId], references: [id])
+  key       PreferenceKey
+  value     String
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@unique([userId, key])
+}

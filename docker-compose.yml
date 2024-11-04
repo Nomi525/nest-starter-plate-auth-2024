@@ -1,0 +1,93 @@
+version: "3.8"
+
+networks:
+    nestjs-network:
+        driver: bridge # Use the default bridge driver
+
+services:
+    # Development service
+    app-dev:
+        container_name: nestjs-app-dev
+        build:
+            context: .
+            dockerfile: Dockerfile.dev
+        env_file:
+            - .env.development
+        ports:
+            - "3000:3000"
+        volumes:
+            - .:/app
+            - /app/node_modules
+        depends_on:
+            - db
+        profiles:
+            - dev
+        networks:
+            - nestjs-network # Connect to the network
+
+    # Production service
+    app-prod:
+        container_name: nestjs-app-prod
+        build:
+            context: .
+            dockerfile: Dockerfile.prod
+        env_file:
+            - .env.production
+        ports:
+            - "8080:3000"
+        depends_on:
+            - db
+        profiles:
+            - prod
+        networks:
+            - nestjs-network
+
+    # Database service (PostgreSQL)
+    db:
+        image: postgres:17-alpine
+        container_name: nestjs-db
+        environment:
+            - POSTGRES_USER=postgres
+            - POSTGRES_PASSWORD=root
+            - POSTGRES_DB=localhost
+        ports:
+            - "5432:5432"
+        volumes:
+            - db-data:/var/lib/postgresql/data
+        networks:
+            - nestjs-network # Connect to the network
+
+    # Redis service
+    redis:
+        image: redis:latest
+        container_name: nestjs-redis
+        volumes:
+            - ./environment/redis.dev.conf:/usr/local/etc/redis/redis.conf
+            - ./local/db/redis:/data
+        command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+        ports:
+            - "6379:6379"
+        networks:
+            - nestjs-network
+        healthcheck:
+            test: ["CMD", "redis-cli", "ping"]
+            interval: 5s
+            timeout: 5s
+            retries: 15
+
+    # pgAdmin service (PostgreSQL)
+    pgadmin:
+        image: dpage/pgadmin4
+        container_name: nestjs-pgadmin4
+        environment:
+            - PGADMIN_DEFAULT_EMAIL=admin@example.com
+            - PGADMIN_DEFAULT_PASSWORD=admin
+        ports:
+            - "5050:80"
+        depends_on:
+            - db
+        networks:
+            - nestjs-network
+
+volumes:
+    db-data:

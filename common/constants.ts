@@ -1,0 +1,1 @@
+export const CHEDDR_DECIMAL_PLACES = 18;
