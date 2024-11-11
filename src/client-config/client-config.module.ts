@@ -3,9 +3,10 @@ import { ClientConfigController } from "./client-config.controller";
 // import { PriceModule } from "@modules/price/price.module";
 
 @Module({
-  controllers: [ClientConfigController],
   // imports: [PriceModule],
   imports: [],
-  providers: []
+  controllers: [ClientConfigController],
+  providers: [],
+  exports: []
 })
 export class ClientConfigModule {}

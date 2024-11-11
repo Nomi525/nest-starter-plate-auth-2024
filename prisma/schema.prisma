@@ -162,28 +162,28 @@ model UserConfirmation {
 }
 
 model Vendor {
-  id         String           @id @default(uuid()) @db.Uuid
-  name       String
-  location   String? // correct here
-  user_id    String           @unique @db.Uuid
-  orders     Order[]
-  schedules  VendorSchedule[]
-  user       User             @relation(fields: [user_id], references: [id])
-  created_at DateTime         @default(now())
-  updated_at DateTime         @updatedAt
-  deleted Boolean          @default(false)
-  MenuItem   MenuItem[]
-  image_id   String?          @db.Uuid // correct here
-  image      Image?           @relation(fields: [image_id], references: [id])
+  id             String           @id @default(uuid()) @db.Uuid
+  name           String
+  location       String? // correct here
+  user_id        String           @unique @db.Uuid
+  orders         Order[]
+  schedules      VendorSchedule[]
+  user           User             @relation(fields: [user_id], references: [id])
+  created_at     DateTime         @default(now())
+  updated_at     DateTime         @updatedAt
+  deleted        Boolean          @default(false)
+  MenuItem       MenuItem[]
+  image_id       String?          @db.Uuid // correct here
+  image          Image?           @relation(fields: [image_id], references: [id])
   ImageVariation ImageVariation[]
-  File File[]
+  File           File[]
 }
 
 model MenuItem {
   id           String         @id @default(uuid()) @db.Uuid
   created_at   DateTime       @default(now())
   updated_at   DateTime       @updatedAt
-  deleted Boolean  @default(false)
+  deleted      Boolean        @default(false)
   name         String
   description  String?
   priceCents   Int
@@ -196,7 +196,7 @@ model MenuItem {
   vendor       Vendor         @relation(fields: [vendor_id], references: [id])
   ShoppingCart ShoppingCart[]
   OrderItem    OrderItem[]
-  File File[]
+  File         File[]
 }
 
 model ShoppingCart {
@@ -208,7 +208,7 @@ model ShoppingCart {
   menuItem     MenuItem @relation(fields: [menu_item_id], references: [id])
   created_at   DateTime @default(now())
   updated_at   DateTime @updatedAt
-  deleted   Boolean  @default(false)
+  deleted      Boolean  @default(false)
 
   @@unique([user_id, menu_item_id])
 }
@@ -260,9 +260,9 @@ model Image {
   variations ImageVariation[]
   File       File?            @relation(fields: [fileId], references: [id])
   fileId     String?          @db.Uuid
-  User User[]
-  Vendor Vendor[]
-  MenuItem MenuItem[]
+  User       User[]
+  Vendor     Vendor[]
+  MenuItem   MenuItem[]
 }
 
 model File {
@@ -335,7 +335,7 @@ model Category {
   category_name String
   created_at    DateTime      @default(now())
   updated_at    DateTime      @updatedAt
-  deleted    Boolean       @default(false)
+  deleted       Boolean       @default(false)
   subcategory   SubCategory[]
   MenuItem      MenuItem[]
 }
@@ -346,7 +346,7 @@ model SubCategory {
   categoryId       String   @db.Uuid
   created_at       DateTime @default(now())
   updated_at       DateTime @updatedAt
-  deleted       Boolean  @default(false)
+  deleted          Boolean  @default(false)
   category         Category @relation(fields: [categoryId], references: [id])
 }
 
@@ -366,18 +366,25 @@ model SafeWallet {
   user_id           String   @unique @db.Uuid
   created_at        DateTime @default(now())
   updated_at        DateTime @updatedAt
-  deleted        Boolean  @default(false)
+  deleted           Boolean  @default(false)
   user              User     @relation(fields: [user_id], references: [id])
   siweNonce         String?
 
   @@index([user_EOA_address])
 }
 
+// enum UserRole {
+//   Guest
+//   User
+//   Vendor
+//   Hr
+//   Admin
+// }
+
 enum UserRole {
   Guest
   User
-  Vendor
-  Hr
+  Manager
   Admin
 }
 

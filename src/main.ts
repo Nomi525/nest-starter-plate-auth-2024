@@ -27,7 +27,6 @@ import { setupValidationPipes } from "./../middlewares/setupValidationPipes";
 import { setupSwagger } from "./../middlewares/setupSwagger";
 
 dotenv.config();
-
 async function bootstrap() {
   const PORT = parseInt(process.env.PORT ?? "3000", 10);
   const { module: appModule } = getMyEnv();
@@ -54,7 +53,7 @@ async function bootstrap() {
     };
     next();
   });
- 
+
   // Global error handling for unhandled rejections
   process.on("unhandledRejection", (reason: unknown) => {
     const msg = `Unhandled Promise Rejection: ${reason}`;

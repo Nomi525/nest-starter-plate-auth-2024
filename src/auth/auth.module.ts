@@ -5,6 +5,7 @@ import { RepositoriesModule } from "../repositories";
 import { SessionSerializer } from "./guards/serializer";
 import { JwtStrategy } from "./strategies/jwt.strategy";
 import { JwtManagmentService } from "../auth/services/jwt-managment.service";
+import { AuthController } from "./auth.controller";
 
 const jwt = {
   secret: process.env.JWT_SECRET,
@@ -31,6 +32,7 @@ const jwt = {
       session: true
     })
   ],
+  // controllers: [AuthController],
   exports: [JwtModule, PassportModule, JwtManagmentService],
   providers: [JwtStrategy, SessionSerializer, JwtManagmentService]
 })

@@ -4,6 +4,8 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
 import { ServeStaticModule } from "@nestjs/serve-static";
 import { AppController } from "app.controller";
 import { AppService } from "app.service";
+import { AuthModule } from "auth/auth.module";
+import { UserFacingAuthModule } from "auth/user-facing-auth.module";
 import { ClientConfigModule } from "client-config/client-config.module";
 import { CoreModule } from "core/core.module";
 import { DomainModule } from "domain/domain.module";
@@ -33,20 +35,22 @@ import { WebsocketModule } from "websocket/websocket.module";
     //   }),
     //   inject: [ConfigService]
     // }),
-    DomainModule,
-    CoreModule,
     RepositoriesModule,
+    CoreModule,
     RedisModule,
-    WebsocketModule,
+    ClientConfigModule,
+    UserFacingAuthModule
+    // WebsocketModule,
+    // AuthModule
+    // EmailModule,
+    // FilesModule,
+    // DomainModule,
     // PreferencesModule,
     // CheddrNotificationModule,
-    EmailModule,
     // UserFacingAuthModule,
     // BlockchainModule,
     // WalletModule,
     // OnrampModule,
-    ClientConfigModule,
-    FilesModule,
     // SeedModule,
   ],
   controllers: [AppController],
