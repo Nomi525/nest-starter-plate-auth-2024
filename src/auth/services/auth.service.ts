@@ -1,5 +1,18 @@
 import { UserRole } from ".prisma/client";
 import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+  PreconditionFailedException,
+  UnprocessableEntityException
+} from "@nestjs/common";
+import { User, UserConfirmation } from "@prisma/client";
+import { SiweMessage } from "siwe";
+import { hashPassword, verifyHash } from "../../../common/utils";
+import { createFreeCode } from "../../../common/utils/create-free.code";
+import { EmailService } from "../../email/email.service";
+import {
   ChangePasswordDto,
   ConfirmEmailPayloadDto,
   JwtPayloadDto,
@@ -7,33 +20,16 @@ import {
   LoginPayloadDto,
   RegisterPayloadDto,
   SetPasswordUsingWalletDto,
-  SiweMessageDto,
   UpgradeGuestPayloadDto
 } from "../../repositories/dtos/auth";
-import {
-  BadRequestException,
-  Injectable,
-  Logger,
-  NotFoundException,
-  PreconditionFailedException,
-  UnauthorizedException,
-  UnprocessableEntityException
-} from "@nestjs/common";
-import { User, UserConfirmation } from "@prisma/client";
-import { hashPassword, verifyHash } from "../../../common/utils";
-import { createFreeCode } from "../../../common/utils/create-free.code";
-import { EmailService } from "../../email/email.service";
 import { RegisterResultDto } from "../../repositories/dtos/auth/register-result.dto";
 import { ResendEmailsDto } from "../../repositories/dtos/auth/request-with-email.dto";
 import { GetPrivateUserDto } from "../../repositories/dtos/users/get-private-user.dto";
 import { UpdateUserDto } from "../../repositories/dtos/users/update-user.dto";
 import { UserUpdateResultDto } from "../../repositories/dtos/users/user-update-result.dto";
 import { PrismaService } from "../../repositories/prisma.service";
-import { JwtManagmentService } from "./jwt-managment.service";
 import { UserNotificationGateway } from "../../websocket/user-notification-gateway.service";
-import { ethers } from "ethers";
-import { SiweMessage } from "siwe";
-import { ERRORS } from "../../auth/auth.const";
+import { JwtManagmentService } from "./jwt-managment.service";
 
 type UserWithConfirmation = User & {
   UserConfirmation: UserConfirmation | null;
@@ -67,12 +63,12 @@ export class AuthService {
     }
 
     // Step 2: Ensure that the signer address matches the user's Ethereum address
-    const signerAddress = siweMessage.address;
+    // const signerAddress = siweMessage.address;
     const userId = user.sub;
-    const userWithWallet = await this.prisma.safeWallet.findFirst({
-      where: { user_id: userId },
-      include: { user: true }
-    });
+    // const userWithWallet = await this.prisma.safeWallet.findFirst({
+    //   where: { user_id: userId },
+    //   include: { user: true }
+    // });
 
     // if (!userWithWallet || userWithWallet.user_EOA_address !== signerAddress) {
     //   throw new UnauthorizedException(ERRORS.UNAUTHORIZED.WALLET_MISMACH);
@@ -87,76 +83,76 @@ export class AuthService {
       data: { pwd_hash: newHashedPassword }
     });
 
-    await this.prisma.safeWallet.update({
-      where: { user_id: userId },
-      data: { server_salt }
-    });
+    // await this.prisma.safeWallet.update({
+    //   where: { user_id: userId },
+    //   data: { server_salt }
+    // });
     this.invalidateOtherUserSessions(user);
   }
 
-  async signInWithEthereum(payload: SiweMessageDto): Promise<JwtResponseDto> {
-    const { message, signature } = payload;
+  // async signInWithEthereum(payload: SiweMessageDto): Promise<JwtResponseDto> {
+  //   const { message, signature } = payload;
 
-    const siweMessage = new SiweMessage(message);
+  //   const siweMessage = new SiweMessage(message);
 
-    // Verify the SIWE message with the provided signature
-    const verificationResult = await siweMessage.verify({ signature });
-    if (!verificationResult.success) {
-      throw new BadRequestException("Invalid SIWE signature");
-    }
+  //   // Verify the SIWE message with the provided signature
+  //   const verificationResult = await siweMessage.verify({ signature });
+  //   if (!verificationResult.success) {
+  //     throw new BadRequestException("Invalid SIWE signature");
+  //   }
 
-    // Extract the Ethereum address (EOA) from the message
-    const signerAddress = siweMessage.address;
+  //   // Extract the Ethereum address (EOA) from the message
+  //   const signerAddress = siweMessage.address;
 
-    // Check if the user exists in the database using the EOA (now using SafeWallet)
-    const userWithWallet = await this.prisma.safeWallet.findFirst({
-      where: {
-        user_EOA_address: signerAddress
-      },
-      include: { user: true }
-    });
+  //   // Check if the user exists in the database using the EOA (now using SafeWallet)
+  //   const userWithWallet = await this.prisma.safeWallet.findFirst({
+  //     where: {
+  //       user_EOA_address: signerAddress
+  //     },
+  //     include: { user: true }
+  //   });
 
-    if (!userWithWallet?.user) {
-      throw new NotFoundException("User with this Ethereum address not found");
-    }
+  //   if (!userWithWallet?.user) {
+  //     throw new NotFoundException("User with this Ethereum address not found");
+  //   }
 
-    // Validate nonce to prevent replay attacks
-    if (userWithWallet.siweNonce !== siweMessage.nonce) {
-      throw new BadRequestException("Invalid nonce");
-    }
+  //   // Validate nonce to prevent replay attacks
+  //   if (userWithWallet.siweNonce !== siweMessage.nonce) {
+  //     throw new BadRequestException("Invalid nonce");
+  //   }
 
-    // Invalidate the nonce after use (set it to null)
-    await this.prisma.safeWallet.update({
-      where: { id: userWithWallet.id },
-      data: { siweNonce: null }
-    });
+  //   // Invalidate the nonce after use (set it to null)
+  //   await this.prisma.safeWallet.update({
+  //     where: { id: userWithWallet.id },
+  //     data: { siweNonce: null }
+  //   });
 
-    // Generate JWT tokens for the user
-    const { accessToken, refreshToken } = await this.jwtManagmentService.generateTokens(userWithWallet.user);
+  //   // Generate JWT tokens for the user
+  //   const { accessToken, refreshToken } = await this.jwtManagmentService.generateTokens(userWithWallet.user);
 
-    return {
-      id: userWithWallet.user.id,
-      email: userWithWallet.user.email ?? "",
-      email_confirmed: userWithWallet.user.email_confirmed,
-      access_token: accessToken,
-      refresh_token: refreshToken,
-      role: userWithWallet.user.role
-    };
-  }
+  //   return {
+  //     id: userWithWallet.user.id,
+  //     email: userWithWallet.user.email ?? "",
+  //     email_confirmed: userWithWallet.user.email_confirmed,
+  //     access_token: accessToken,
+  //     refresh_token: refreshToken,
+  //     role: userWithWallet.user.role
+  //   };
+  // }
 
-  async generateSiweNonce(walletAddress: string): Promise<string> {
-    const nonce = ethers.hexlify(ethers.randomBytes(16));
+  // async generateSiweNonce(walletAddress: string): Promise<string> {
+  //   const nonce = ethers.hexlify(ethers.randomBytes(16));
 
-    await this.prisma.safeWallet.update({
-      where: { user_EOA_address: walletAddress },
-      data: { siweNonce: nonce }
-    });
+  //   await this.prisma.safeWallet.update({
+  //     where: { user_EOA_address: walletAddress },
+  //     data: { siweNonce: nonce }
+  //   });
 
-    return nonce;
-  }
+  //   return nonce;
+  // }
 
   async changePassword(authUser: JwtPayloadDto, payload: ChangePasswordDto): Promise<void> {
-    const { oldAuthHash, newAuthHash, server_salt } = payload;
+    const { oldAuthHash, newAuthHash } = payload;
     const user_id = authUser.sub;
 
     const user = await this.prisma.user.findUnique({ where: { id: user_id } });
@@ -179,7 +175,7 @@ export class AuthService {
       data: { pwd_hash: newHashedPassword }
     });
 
-    await this.prisma.safeWallet.update({ data: { server_salt }, where: { user_id } });
+    // await this.prisma.safeWallet.update({ data: { server_salt }, where: { user_id } });
     this.invalidateOtherUserSessions(authUser);
   }
 
@@ -192,12 +188,17 @@ export class AuthService {
       where: { email: email.toLowerCase().trim() }
     });
 
+    console.log(user, "user12");
+    
+
     if (!user) {
       throw this.throwAuthError(payload);
     } else if (!user?.pwd_hash) {
       throw new Error(`no pwd_hash stored with user`);
     } else {
       const isPasswordVerified = await verifyHash(password, user.pwd_hash);
+      console.log(isPasswordVerified, "isPasswordVerified");
+
       if (!isPasswordVerified) {
         throw this.throwAuthError(payload);
       }
@@ -260,8 +261,8 @@ export class AuthService {
   }
 
   async upgradeGuest(payload: UpgradeGuestPayloadDto, userId: string): Promise<RegisterResultDto> {
-    const { first_name, last_name, password, email } = payload;
-    const passwordHash = await hashPassword(password);
+    const { first_name, last_name, auth_pass, email } = payload;
+    const passwordHash = await hashPassword(auth_pass);
     //todo check email does not yet exist
     const updatedUser = await this.prisma.user.update({
       where: { id: userId },
@@ -286,7 +287,7 @@ export class AuthService {
         where: { user_id: updatedUser.id },
         data: { confirm_email_code: confirmEmailCode }
       });
-      await this.emailService.sendConfirmCodeMail(updatedUser, uc);
+      // await this.emailService.sendConfirmCodeMail(updatedUser, uc);
     }
 
     const tokens = await this.jwtManagmentService.generateTokens(updatedUser);
@@ -314,11 +315,13 @@ export class AuthService {
       throw new UnprocessableEntityException(`${payload.email} already exists`);
     }
 
-    const passwordHash = await hashPassword(payload.auth_hash);
+    const passwordHash = await hashPassword(payload.pass_hash);
 
     const [user, userConfirmation] = await this.createUserAndConfirmation(payload, passwordHash);
 
-    await this.emailService.sendConfirmCodeMail(user, userConfirmation);
+    console.log(userConfirmation, "userConfirmation");
+
+    // await this.emailService.sendConfirmCodeMail(user, userConfirmation);
 
     const { accessToken, refreshToken } = await this.jwtManagmentService.generateTokens(user);
     const quickLoginData = {
@@ -334,7 +337,7 @@ export class AuthService {
     //   note: `EOA ${payload.user_EOA_address} ${payload.first_name} ${payload.last_name} ${payload.role}`
     // });
     if (!quickLoginData.email) {
-      throw new BadRequestException("tried to log in with user that has no email");
+      throw new BadRequestException("tried to log in with employee/manager that has no email");
     }
     return {
       id: user.id,
@@ -507,25 +510,25 @@ export class AuthService {
   ): Promise<[User, UserConfirmation]> {
     const [user, userConfirmation] = await this.prisma.$transaction(async prisma => {
       let user: User;
-      if (payload.role === UserRole.Vendor) {
+      if (payload.role === UserRole.Manager) {
         user = await prisma.user.create({
           data: {
             email: payload.email,
             pwd_hash: passwordHash,
             email_confirmed: false,
-            role: UserRole.Vendor,
-            safeWallet_confirmation: false
+            role: UserRole.Manager,
+            // safeWallet_confirmation: false
           }
         });
 
-        const vendorName = payload?.vendor_name;
-        if (!vendorName) {
-          throw new UnprocessableEntityException(`vendor_name must be specifiedß`);
+        const managerName = payload?.manager_name;
+        if (!managerName) {
+          throw new UnprocessableEntityException(`manager name must be specified`);
         }
-        await prisma.vendor.create({
+        await prisma.manager.create({
           data: {
             user_id: user.id,
-            name: vendorName,
+            name: managerName,
             created_at: new Date()
           }
         });
@@ -538,7 +541,7 @@ export class AuthService {
             pwd_hash: passwordHash,
             email_confirmed: false,
             role: UserRole.User,
-            safeWallet_confirmation: false
+            // safeWallet_confirmation: false
           }
         });
       }

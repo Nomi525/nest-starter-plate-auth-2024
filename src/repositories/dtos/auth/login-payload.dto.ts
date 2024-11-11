@@ -2,8 +2,10 @@ import RequiredStringProperty from "../../../../common/utils/annotations/dto/req
 
 export class LoginPayloadDto {
   @RequiredStringProperty("email to log in with")
-  readonly email: string;
+  email: string;
+  // _email: string;
 
   @RequiredStringProperty("auth_hash to log in with")
-  readonly password: string;
+  password: string;
+  // _password: string;
 }

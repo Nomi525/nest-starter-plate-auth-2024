@@ -107,7 +107,7 @@ export class JwtManagmentService {
 
   async removeAuthTokenEntityById(jti: string): Promise<void> {
     if (!jti) {
-      throw new UnprocessableEntityException("Cannot detect the sessions for the user");
+      throw new UnprocessableEntityException("Cannot detect the sessions for the employee/manager");
     }
     await this.prisma.authToken.delete({ where: { id: jti } });
   }

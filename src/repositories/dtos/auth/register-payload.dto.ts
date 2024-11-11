@@ -15,7 +15,7 @@ export class UpgradeGuestPayloadDto {
   readonly last_name: string;
 
   @RequiredStringProperty("User Password")
-  readonly password: string;
+  readonly auth_pass: string;
 
   @RequiredEmailProperty("User Email")
   readonly email: string;
@@ -31,19 +31,19 @@ export class RegisterPayloadDto {
   @OptionalStringProperty("User Last Name")
   readonly last_name: string;
 
-  @RequiredStringProperty("User Auth Hash")
-  readonly auth_hash: string;
+  @RequiredStringProperty("User Auth Pass Hash")
+  readonly pass_hash: string;
 
-  @RequiredStringProperty("User Server Salt")
-  readonly server_salt: string;
+  // @RequiredStringProperty("User Server Salt")
+  // readonly server_salt: string;
 
-  @RequiredStringProperty("User EOA Address")
-  readonly user_EOA_address: string;
+  // @RequiredStringProperty("User EOA Address")
+  // readonly user_EOA_address: string;
 
   @OptionalStringProperty("only for vendors to set!")
-  readonly vendor_name?: string;
+  readonly manager_name?: string;
 
-  @OptionalStringProperty("role for user/vendor")
+  @OptionalStringProperty("role for user/Manager")
   readonly role?: UserRole;
 }
 
@@ -54,8 +54,8 @@ export class ChangePasswordDto {
   @RequiredStringProperty("new User Auth Hash")
   readonly newAuthHash: string;
 
-  @RequiredStringProperty("new User Server Salt")
-  readonly server_salt: string;
+  // @RequiredStringProperty("new User Server Salt")
+  // readonly server_salt: string;
 }
 
 export class SiweMessageDto {

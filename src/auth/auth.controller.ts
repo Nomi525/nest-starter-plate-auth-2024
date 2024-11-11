@@ -43,10 +43,13 @@ import { AuthService } from "./services/auth.service";
 @ApiUnauthorizedResponse()
 @Controller("auth")
 export class AuthController {
+  // eslint-disable-next-line prettier/prettier
   constructor(private authService: AuthService) {}
 
   @PublicPostRequest("login", LoginPayloadDto, JwtResponseDto)
   async login(@Body() payload: LoginPayloadDto): Promise<JwtResponseDto> {
+    console.log(payload, "payload12");
+    
     const user = await this.authService.validateUser(payload);
     return await this.authService.login(user);
   }
@@ -81,7 +84,7 @@ export class AuthController {
     return await this.authService.createGuest();
   }
 
-  @PrivatePostRequest("logout", LogoutRequestDto, null, "Ends a user Session", UserRole.Guest)
+  @PrivatePostRequest("logout", LogoutRequestDto, null, "Ends a employee/manager Session", UserRole.User)
   async logout(@Body() payload: LogoutRequestDto): Promise<void> {
     await this.authService.logout(payload.access_token, payload.refresh_token);
   }
@@ -90,7 +93,7 @@ export class AuthController {
     "refresh-auth-token",
     RefreshTokenRequestDto,
     JwtResponseDto,
-    "submits a token from a mail and loggs user in. (possibly skipping wallet creating)"
+    "submits a token from a mail and logs user in. (possibly skipping wallet creating)"
   )
   async updateAccessToken(@Body() payload: RefreshTokenRequestDto): Promise<JwtResponseDto> {
     return await this.authService.updateSession(payload.refresh_token);
@@ -107,13 +110,13 @@ export class AuthController {
     await this.authService.resendCodeEmail(payload);
   }
 
-  @PrivatePostRequest("resend-email", EmptyDto, null, "Sends the Confirmation Code email again to a user", "User")
+  @PrivatePostRequest("resend-email", EmptyDto, null, "Sends the Confirmation Code email again to a employee/manager", "User")
   async resendEmail(@AuthorizedUser() user: JwtPayloadDto): Promise<void> {
     await this.authService.resendCodeEmail({ email: user.email });
   }
 
   //TODO move user data to own controller
-  @PrivatePostRequest("user/data", UpdateUserDto, UserUpdateResultDto, "Updates a Users data")
+  @PrivatePostRequest("user/data", UpdateUserDto, UserUpdateResultDto, "Updates a employee/manager data")
   async updateUserData(
     @Body() payload: UpdateUserDto,
     @AuthorizedUser() user: JwtPayloadDto
@@ -124,7 +127,7 @@ export class AuthController {
     return await this.authService.updateUserData(payload);
   }
 
-  @PrivateGetRequest("user/data", GetPrivateUserDto, "Updates a Users data", UserRole.Guest)
+  @PrivateGetRequest("user/data", GetPrivateUserDto, "Updates a employee/manager data", UserRole.Guest)
   async geteUserData(@AuthorizedUser() user: JwtPayloadDto): Promise<GetPrivateUserDto> {
     return await this.authService.getUserData(user.sub);
   }
@@ -133,7 +136,7 @@ export class AuthController {
     "change-password",
     ChangePasswordDto,
     null,
-    "Allows a user to change their password",
+    "Allows a employee/manager to change their password",
     UserRole.User
   )
   async changePassword(@Body() payload: ChangePasswordDto, @AuthorizedUser() user: JwtPayloadDto): Promise<void> {
@@ -144,7 +147,7 @@ export class AuthController {
     "reset-password",
     SetPasswordUsingWalletDto,
     null,
-    "Allows a user to change their password",
+    "Allows a employee/manager to change their password",
     UserRole.User
   )
   async resetPassword(
@@ -154,14 +157,14 @@ export class AuthController {
     await this.authService.resetPassword(user, payload);
   }
 
-  @PublicGetRequest("generate-siwe-nonce/:walletAddress", NonceDto, "obtains the next nonce for SIWE")
-  async generateSiweNonce(@Param("walletAddress") walletAddress: string): Promise<NonceDto> {
-    const nonce = await this.authService.generateSiweNonce(walletAddress);
-    return { nonce };
-  }
+  // @PublicGetRequest("generate-siwe-nonce/:walletAddress", NonceDto, "obtains the next nonce for SIWE")
+  // async generateSiweNonce(@Param("walletAddress") walletAddress: string): Promise<NonceDto> {
+  //   const nonce = await this.authService.generateSiweNonce(walletAddress);
+  //   return { nonce };
+  // }
 
-  @PublicPostRequest("sign-in-with-ethereum", SiweMessageDto, JwtResponseDto, "signs in with ethereum")
-  async signInWithEthereum(@Body() payload: SiweMessageDto): Promise<JwtResponseDto> {
-    return await this.authService.signInWithEthereum(payload);
-  }
+  // @PublicPostRequest("sign-in-with-ethereum", SiweMessageDto, JwtResponseDto, "signs in with ethereum")
+  // async signInWithEthereum(@Body() payload: SiweMessageDto): Promise<JwtResponseDto> {
+  //   return await this.authService.signInWithEthereum(payload);
+  // }
 }
