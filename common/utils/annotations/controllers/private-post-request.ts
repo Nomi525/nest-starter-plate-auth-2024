@@ -30,7 +30,7 @@ export function PrivatePostRequest<T, U>(
 
   const decorators = [
     Post(path),
-    Roles(role ?? UserRole.User),
+    Roles(role ?? UserRole.EMPLOYEE),
     ...(ResponseClass
       ? [
           ApiOkResponse({

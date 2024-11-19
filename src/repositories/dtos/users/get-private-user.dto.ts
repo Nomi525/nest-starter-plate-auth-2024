@@ -6,11 +6,11 @@ import RequiredEmailProperty from "../../../../common/utils/annotations/dto/requ
 
 export class GetPrivateUserDto extends GetPublicUserDto {
   @RequiredEmailProperty("User Email")
-  readonly email: string;
+  email: string;
 
   @RequiredBooleanProperty("User Email is Confirmed")
-  readonly email_confirmed: boolean;
+  email_confirmed: boolean;
 
   @EnumProperty(UserRole, "User Role")
-  readonly role: UserRole;
+  role: UserRole;
 }

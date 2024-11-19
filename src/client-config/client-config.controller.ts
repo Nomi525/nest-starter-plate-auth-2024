@@ -35,7 +35,7 @@ export class ClientConfigController {
     return this.getDefaultConfig();
   }
 
-  @PrivateGetRequest("/authConfig", ClientConfig, "", UserRole.Guest)
+  @PrivateGetRequest("/authConfig", ClientConfig, "", UserRole.GUEST)
   async getAuthconfig(/*@AuthorizedUser() user: JwtPayloadDto*/): Promise<ClientConfig> {
     // Optionally, obtain user-specific config from the database if required.
     return this.getDefaultConfig();

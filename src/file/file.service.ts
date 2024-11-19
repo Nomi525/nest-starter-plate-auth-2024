@@ -101,8 +101,8 @@ export class FileService {
         originalImageId: imageId,
         resolutionWidth: properties.resolutionWidth,
         resolutionHeight: properties.resolutionHeight,
-        aspectRatio: properties.aspectRatio,
-        fileFormat: properties.fileFormat
+        // aspectRatio: properties.aspectRatio,
+        // fileFormat: properties.fileFormat
       }
     });
   }

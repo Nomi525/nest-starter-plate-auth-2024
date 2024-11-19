@@ -1,6 +1,9 @@
-import { applyDecorators, Delete, UseGuards } from "@nestjs/common";
-import { Roles } from "../../../../common/decorators";
 import { UserRole } from "@prisma/client";
+import { Roles } from "../../../../common/decorators";
+import { JwtAuthGuard, RolesGuard } from "../../../../src/auth/guards";
+import { EmptyDto } from "../../../../src/repositories/dtos/auth/empty.dto";
+import { ClassType } from "./class-type";
+import { applyDecorators, Delete, UseGuards } from "@nestjs/common";
 import {
   ApiBearerAuth,
   ApiBody,
@@ -9,10 +12,6 @@ import {
   ApiOperation,
   ApiUnauthorizedResponse
 } from "@nestjs/swagger";
-import { JwtAuthGuard, RolesGuard } from "../../../../src/auth/guards";
-import { ClassType } from "./class-type";
-import { EmptyDto } from "../../../../src/repositories/dtos/auth/empty.dto";
-
 export function PrivateDeleteRequest<U>(
   path: string,
   RequestPostBodyClass: ClassType<U>[] | ClassType<U> | null,
@@ -26,7 +25,7 @@ export function PrivateDeleteRequest<U>(
 
   const decorators = [
     Delete(path),
-    Roles(role ?? UserRole.User),
+    Roles(role ?? UserRole.EMPLOYEE),
     ApiOkResponse({ type: EmptyDto, isArray: false }),
     ...(RequestPostBodyClass ? [ApiBody({ type: requestBodyType, isArray: requestBodyIsArray })] : []),
     ApiBearerAuth(),

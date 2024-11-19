@@ -8,145 +8,211 @@ datasource db {
 }
 
 model User {
-  id                      String                @id @default(uuid()) @db.Uuid
-  first_name              String?
-  last_name               String?
-  email                   String?               @unique
-  pwd_hash                String?
-  email_confirmed         Boolean               @default(false)
-  phone_confirmed         Boolean               @default(false)
-  phoneNumber             String?               @unique
-  role                    UserRole
-  AuthToken               AuthToken[]
-  uploadedFiles           File[]                @relation("UserUploadedFiles")
-  // orders                  Order[]
-  // SafeWallet              SafeWallet?
-  // transactions            Transaction[]
-  UserConfirmation        UserConfirmation?
-  // safeWallet_confirmation Boolean               @default(false)
-  // CpcEmployee             CpcEmployee?
-  created_at              DateTime              @default(now())
-  updated_at              DateTime              @default(now()) @updatedAt
-  // Vendor                  Vendor?
-  Manager                  Manager?
-  // CaChingNotification     CaChingNotification[]
-  // ShoppingCart            ShoppingCart[]
-  Preference              Preference[]
-  image_id                String?               @db.Uuid
-  image                   Image?                @relation(fields: [image_id], references: [id])
-  File                    File[]
+  id                String              @id @default(uuid()) @db.Uuid
+  first_name        String
+  last_name         String?
+  empId             String              @unique @default("EMPID_01")
+  email             String              @unique
+  pwd_hash          String
+  email_confirmed   Boolean             @default(false)
+  phone_confirmed   Boolean             @default(false)
+  knownLanguages    Language[]          @relation("UserLanguages")
+  phoneNumber       String?             @unique
+  role              UserRole
+  AuthToken         AuthToken[]
+  UploadedFiles     File[]              @relation("UserUploadedFiles")
+  UserConfirmation  UserConfirmation?
+  Preference        Preference[]
+  image_id          String?             @db.Uuid
+  Image             Image?              @relation(fields: [image_id], references: [id])
+  EmployeeShift     EmployeeShift?
+  Calls             Call[]              @relation("EmployeeCalls")
+  AssignedCalls     Call[]              @relation("AssignedCalls")
+  CallTransfer      CallTransfer[]
+  CallLink          CallLink[]
+  Notification      Notification[]
+  EmployeeActivity  EmployeeActivity[]
+  Break             Break[]
+  CallTransferQueue CallTransferQueue[]
+
+  created_at DateTime @default(now())
+  updated_at DateTime @default(now()) @updatedAt
 
   @@index([email])
 }
 
-// model WeeklyPayout {
-//   id               String             @id @default(uuid()) @db.Uuid
-//   created_at       DateTime           @default(now())
-//   payouts_status   PayoutStatus
-//   WeeklyUserPayout WeeklyUserPayout[]
+model EmployeeShift {
+  id                    String   @id @default(uuid()) @db.Uuid
+  employee_id           String   @unique @db.Uuid
+  user                  User     @relation(fields: [employee_id], references: [id])
+  shift_start_date      DateTime
+  shift_end_date        DateTime
+  shift_duration        String
+  employment_active     Boolean
+  employment_start_date DateTime
+  created_at            DateTime @default(now())
+  updated_at            DateTime @default(now()) @updatedAt
+}
 
-//   @@index([created_at])
-// }
+enum UserRole {
+  GUEST
+  EMPLOYEE
+  MANAGER
+  ADMIN
+}
 
-// enum PayoutStatus {
-//   PLANNED
-//   IN_PROGRESS
-//   FINISHED
-//   FAILED
-// }
+model Language {
+  id         String   @id @default(uuid()) @db.Uuid
+  name       String // e.g. English, Hindi
+  users      User[]   @relation("UserLanguages")
+  isDeleted  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updated_at DateTime @default(now()) @updatedAt
+}
 
-// model CpcEmployee {
-//   id                    String             @id @default(uuid()) @db.Uuid
-//   created_at            DateTime           @default(now())
-//   user_id               String             @unique @db.Uuid
-//   user                  User               @relation(fields: [user_id], references: [id])
-//   empoyment_active      Boolean
-//   employment_start_date DateTime
-//   WeeklyUserPayout      WeeklyUserPayout[]
-// }
+model Call {
+  id             String          @id @default(uuid()) @db.Uuid
+  clientName     String
+  clientNumber   String
+  clientLanguage String
+  description    String?
+  status         CallStatus
+  recordingURL   String?
+  startTime      DateTime
+  endTime        DateTime?
+  duration       Int?
+  assignedTo     User            @relation("AssignedCalls", fields: [assignedToId], references: [id])
+  assignedToId   String          @db.Uuid
+  handledBy      User            @relation("EmployeeCalls", fields: [handledById], references: [id])
+  handledById    String          @db.Uuid
+  FollowUps      FollowUp[]
+  CallTransfers  CallTransfer[]
+  CallLinks      CallLink[]
+  CallRecording  CallRecording[]
+  createdAt      DateTime        @default(now())
+  updated_at     DateTime        @default(now()) @updatedAt
 
-// model WeeklyUserPayout {
-//   id             String       @id @default(uuid()) @db.Uuid
-//   created_at     DateTime     @default(now())
-//   employee_id    String       @db.Uuid
-//   employee       CpcEmployee  @relation(fields: [employee_id], references: [id])
-//   payout_id      String       @db.Uuid
-//   payout         WeeklyPayout @relation(fields: [payout_id], references: [id])
-//   transaction_id String?      @unique @db.Uuid
-//   transaction    Transaction? @relation(fields: [transaction_id], references: [id])
-//   payouts_status PayoutStatus
-// }
+  @@index([assignedToId, status])
+}
 
-// enum TxCategory {
-//   NOT_SPECIFIED
-//   PAYOUT
-//   ONRAMP
-//   CHANNEL_CLOSE
-//   CHANNEL_OPEN
-//   WALLET_CREATION
-//   USER_SEND_ONCHAIN
-//   USER_SEND_CHANNEL
-//   NFT_REVEAL
-// }
+enum CallStatus {
+  ONGOING
+  COMPLETED
+  FAILED
+  PENDING
+}
 
-// model Transaction {
-//   id                  String               @id @default(uuid()) @db.Uuid
-//   created_at          DateTime             @default(now())
-//   updated_at          DateTime             @updatedAt
-//   type                TransactionType
-//   status              TransactionStatus    @default(FINISHED)
-//   cheddrAmount        Decimal              @db.Decimal(78, 0)
-//   userId              String?              @db.Uuid
-//   user                User?                @relation(fields: [userId], references: [id])
-//   txId                String?
-//   receiverAddress     String?
-//   channelId           String? // on-chain bytes32 formatted as 0x71055430...
-//   sequenceNumber      Int?
-//   note                String
-//   txCategory          TxCategory?
-//   WeeklyUserPayout    WeeklyUserPayout?
-//   CaChingNotification CaChingNotification?
-//   Order               Order?
+model FollowUp {
+  id         String   @id @default(uuid()) @db.Uuid
+  scheduleAt DateTime
+  callId     String   @db.Uuid
+  Call       Call     @relation(fields: [callId], references: [id])
+  notes      String?
+  createdAt  DateTime @default(now())
+  updated_at DateTime @default(now()) @updatedAt
+}
 
-//   @@index([receiverAddress, userId, created_at])
-// }
+model CallTransfer {
+  id              String   @id @default(uuid()) @db.Uuid
+  OriginalCall    Call     @relation(fields: [originalCallId], references: [id])
+  originalCallId  String   @db.Uuid
+  TransferredTo   User     @relation(fields: [transferredToId], references: [id])
+  transferredToId String   @db.Uuid
+  transferReason  String?
+  createdAt       DateTime @default(now())
+  updated_at      DateTime @default(now()) @updatedAt
+}
 
-// enum TransactionStatus {
-//   PLANNED
-//   IN_PROGRESS
-//   FINISHED
-//   FAILED
-// }
+model CallLink {
+  id         String   @id @default(uuid()) @db.Uuid
+  Call       Call     @relation(fields: [callId], references: [id])
+  callId     String   @db.Uuid
+  linkURL    String
+  SharedBy   User     @relation(fields: [sharedById], references: [id])
+  sharedById String   @db.Uuid
+  createdAt  DateTime @default(now())
+  updated_at DateTime @default(now()) @updatedAt
+}
 
-// model CaChingNotification {
-//   id            String       @id @default(uuid()) @db.Uuid
-//   created_at    DateTime     @default(now())
-//   userId        String?      @db.Uuid
-//   user          User?        @relation(fields: [userId], references: [id])
-//   transactionId String       @unique @db.Uuid
-//   Transaction   Transaction? @relation(fields: [transactionId], references: [id])
-//   received      DateTime?
-//   message       String
+enum NotificationType {
+  ASSIGNMENT
+  TRANSFER
+  FOLLOW_UP
+  GENERAL
+}
 
-//   @@index([userId, received])
-// }
+model Notification {
+  id         Int              @id @default(autoincrement())
+  message    String
+  User       User             @relation(fields: [userId], references: [id])
+  userId     String           @db.Uuid
+  isRead     Boolean          @default(false)
+  type       NotificationType
+  createdAt  DateTime         @default(now())
+  updated_at DateTime         @default(now()) @updatedAt
+}
 
-// enum CaChingStatus {
-//   PLANNED
-//   FINISHED
-// }
+model EmployeeActivity {
+  id         String         @id @default(uuid()) @db.Uuid
+  Employee   User           @relation(fields: [employeeId], references: [id])
+  employeeId String         @db.Uuid
+  status     ActivityStatus
+  createdAt  DateTime       @default(now())
+  updated_at DateTime       @default(now()) @updatedAt
+}
 
-// enum TransactionType {
-//   ORDER
-//   PAYMENT_CHANNEL
-//   ON_CHAIN
-// }
+model Break {
+  id         String   @id @default(uuid()) @db.Uuid
+  Employee   User     @relation(fields: [employeeId], references: [id])
+  employeeId String   @db.Uuid
+  startTime  DateTime
+  endTime    DateTime
+  duration   Int // Duration in minutes (30, 40, 60, 80, 120)
+  createdAt  DateTime @default(now())
+  updated_at DateTime @default(now()) @updatedAt
+}
+
+enum ActivityStatus {
+  IDLE
+  BUSY
+  ON_CALL
+  ON_BREAK
+  OFFLINE
+}
+
+model CallTransferQueue {
+  id               String   @id @default(uuid()) @db.Uuid
+  callId           String
+  transferPriority Int // Priority level (1-5)
+  assignedToId     String   @db.Uuid
+  AssignedTo       User     @relation(fields: [assignedToId], references: [id])
+  createdAt        DateTime @default(now())
+  updated_at       DateTime @default(now()) @updatedAt
+}
+
+model CallRecording {
+  id         String          @id @default(uuid()) @db.Uuid
+  Call       Call            @relation(fields: [callId], references: [id])
+  callId     String          @db.Uuid
+  filePath   String
+  duration   Int
+  status     RecordingStatus
+  compliance Boolean // Ensure recording meets compliance standards
+  createdAt  DateTime        @default(now())
+  updated_at DateTime        @default(now()) @updatedAt
+}
+
+enum RecordingStatus {
+  PENDING
+  FAILED
+  SUCCESS
+}
 
 model UserConfirmation {
   id                           String    @id @default(uuid()) @db.Uuid
   created_at                   DateTime  @default(now())
   user_id                      String    @unique @db.Uuid
-  user                         User      @relation(fields: [user_id], references: [id])
+  User                         User      @relation(fields: [user_id], references: [id])
   confirm_email_code           String?
   confirm_email_code_sent      DateTime?
   confirm_email_code_timelimit DateTime?
@@ -162,147 +228,54 @@ model UserConfirmation {
   magic_login_code_timelimit   DateTime?
 }
 
-
-model Manager {
-  id             String           @id @default(uuid()) @db.Uuid
-  name           String
-  // location       String? // correct here
-  user_id        String           @unique @db.Uuid
-  // orders         Order[]
-  // schedules      VendorSchedule[]
-  user           User             @relation(fields: [user_id], references: [id])
-  created_at     DateTime         @default(now())
-  updated_at     DateTime         @updatedAt
-  deleted        Boolean          @default(false)
-  // MenuItem       MenuItem[]
-  image_id       String?          @db.Uuid // correct here
-  image          Image?           @relation(fields: [image_id], references: [id])
-  ImageVariation ImageVariation[]
-  File           File[]
+model AuthToken {
+  id         String    @id @default(uuid()) @db.Uuid
+  created_at DateTime  @default(now())
+  expires_at DateTime?
+  user_id    String    @db.Uuid
+  User       User      @relation(fields: [user_id], references: [id])
 }
 
-// model Vendor {
-//   id             String           @id @default(uuid()) @db.Uuid
-//   name           String
-//   location       String? // correct here
-//   user_id        String           @unique @db.Uuid
-//   orders         Order[]
-//   schedules      VendorSchedule[]
-//   user           User             @relation(fields: [user_id], references: [id])
-//   created_at     DateTime         @default(now())
-//   updated_at     DateTime         @updatedAt
-//   deleted        Boolean          @default(false)
-//   MenuItem       MenuItem[]
-//   image_id       String?          @db.Uuid // correct here
-//   image          Image?           @relation(fields: [image_id], references: [id])
-//   ImageVariation ImageVariation[]
-//   File           File[]
-// }
+enum PreferenceKey {
+  SHARE_FULLNAME
+  SHARE_FIRSTNAME
+  SHARE_PROFILE_IMAGE
+}
 
-// model MenuItem {
-//   id           String         @id @default(uuid()) @db.Uuid
-//   created_at   DateTime       @default(now())
-//   updated_at   DateTime       @updatedAt
-//   deleted      Boolean        @default(false)
-//   name         String
-//   description  String?
-//   priceCents   Int
-//   categoryId   String         @db.Uuid
-//   available    Boolean        @default(true)
-//   vendor_id    String         @db.Uuid
-//   image_id     String?        @db.Uuid
-//   image        Image?         @relation(fields: [image_id], references: [id])
-//   category     Category       @relation(fields: [categoryId], references: [id])
-//   vendor       Vendor         @relation(fields: [vendor_id], references: [id])
-//   ShoppingCart ShoppingCart[]
-//   OrderItem    OrderItem[]
-//   File         File[]
-// }
+model Preference {
+  id         String        @id @default(uuid()) @db.Uuid
+  userId     String        @db.Uuid
+  User       User          @relation(fields: [userId], references: [id])
+  key        PreferenceKey
+  value      String
+  createdAt  DateTime      @default(now())
+  updated_at DateTime      @default(now()) @updatedAt
 
-// model ShoppingCart {
-//   id           String   @id @default(uuid()) @db.Uuid
-//   menu_item_id String   @db.Uuid
-//   quantity     Int
-//   user_id      String   @db.Uuid
-//   user         User     @relation(fields: [user_id], references: [id])
-//   menuItem     MenuItem @relation(fields: [menu_item_id], references: [id])
-//   created_at   DateTime @default(now())
-//   updated_at   DateTime @updatedAt
-//   deleted      Boolean  @default(false)
-
-//   @@unique([user_id, menu_item_id])
-// }
-
-// model OrderItem {
-//   id         String   @id @default(uuid()) @db.Uuid
-//   created_at DateTime @default(now())
-//   name       String // copy from menuItem
-//   priceCents Int // copy from menuItem
-//   quantity   Int // copy from shopping cart
-//   orderId    String   @db.Uuid
-//   order      Order    @relation(fields: [orderId], references: [id])
-//   menuItemId String   @db.Uuid
-//   menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
-// }
-
-// enum OrderType {
-//   PLAIN_AMOUNT
-//   VENDOR_CREATED
-//   USER_CREATED
-// }
-
-// model Order {
-//   id                 String             @id @default(uuid()) @db.Uuid
-//   created_at         DateTime           @default(now())
-//   updated_at         DateTime           @updatedAt
-//   completed_at       DateTime?
-//   totalAmount        Int // Total amount in cents
-//   cheddrAmount       Decimal            @db.Decimal(78, 0) // Total amount in curds
-//   status             OrderStatus
-//   vendorConfirmation VendorConfirmation @default(INITIAL)
-//   vendorId           String             @db.Uuid
-//   vendor             Vendor             @relation(fields: [vendorId], references: [id])
-//   transactioinId     String?            @unique @db.Uuid
-//   transaction        Transaction?       @relation(fields: [transactioinId], references: [id])
-//   userId             String?            @db.Uuid // user who created it
-//   user               User?              @relation(fields: [userId], references: [id])
-//   OrderItems         OrderItem[]
-//   orderType          OrderType
-//   rotatingId         String             @default("000")
-//   pickup_location    String?
-//   pickup_time        String?
-//   pickup_day         String?
-// }
+  @@unique([userId, key])
+}
 
 model Image {
   id         String           @id @default(uuid()) @db.Uuid
   created_at DateTime         @default(now())
-  variations ImageVariation[]
+  updated_at DateTime         @default(now()) @updatedAt
+  Variations ImageVariation[]
   File       File?            @relation(fields: [fileId], references: [id])
   fileId     String?          @db.Uuid
   User       User[]
-  Manager     Manager[]
-  // Vendor     Vendor[]
-  // MenuItem   MenuItem[]
 }
 
 model File {
   id               String           @id @default(uuid()) @db.Uuid
-  created_at       DateTime         @default(now())
   diskName         String
   originalFileName String
   size             BigInt
-  uploader_user_id String?          @db.Uuid
+  uploader_user_id String           @db.Uuid
   fileFormat       String?
-  updatedAt        DateTime?        @updatedAt
-  uploader         User?            @relation("UserUploadedFiles", fields: [uploader_user_id], references: [id])
-  // MenuItem         MenuItem[]
-  User             User[]
+  created_at       DateTime         @default(now())
+  updated_at       DateTime         @default(now()) @updatedAt
+  Uploader         User             @relation("UserUploadedFiles", fields: [uploader_user_id], references: [id])
   Image            Image[]
   ImageVariation   ImageVariation[]
-  Manager Manager[]
-
-  // Vendor Vendor[]
 }
 
 enum ImageSize {
@@ -315,167 +288,15 @@ enum ImageSize {
 model ImageVariation {
   id               String    @id @default(uuid()) @db.Uuid
   created_at       DateTime  @default(now())
+  updated_at       DateTime  @default(now()) @updatedAt
   originalImageId  String    @db.Uuid
-  originalImage    Image     @relation(fields: [originalImageId], references: [id])
+  OriginalImage    Image     @relation(fields: [originalImageId], references: [id])
   size             ImageSize
   filePath         String
   fileId           String    @db.Uuid
-  file             File      @relation(fields: [fileId], references: [id])
+  File             File      @relation(fields: [fileId], references: [id])
   resolutionWidth  Int?
   resolutionHeight Int?
-  aspectRatio      Float?
+  aspectRatio      Int?
   fileFormat       String?
-  Manager           Manager[]
-  // Vendor           Vendor[]
-}
-
-// enum Weekday {
-//   SUN
-//   MON
-//   TUE
-//   WED
-//   THU
-//   FRI
-//   SAT
-// }
-
-// model VendorSchedule {
-//   id           String    @id @default(uuid()) @db.Uuid
-//   startTime    String // Store as "HH:MM" ISO time string
-//   endTime      String // Store as "HH:MM" ISO time string
-//   active_days  Weekday[] // Enum for days of the week
-//   company_name String
-//   address      String
-//   vendorId     String    @db.Uuid
-//   vendor       Vendor    @relation(fields: [vendorId], references: [id])
-//   created_at   DateTime  @default(now())
-//   updated_at   DateTime  @updatedAt
-//   active       Boolean   @default(true) // paused or not, think like alarm clock settings
-// }
-
-// model Category {
-//   id            String        @id @default(uuid()) @db.Uuid
-//   category_name String
-//   created_at    DateTime      @default(now())
-//   updated_at    DateTime      @updatedAt
-//   deleted       Boolean       @default(false)
-//   subcategory   SubCategory[]
-//   MenuItem      MenuItem[]
-// }
-
-// model SubCategory {
-//   id               String   @id @default(uuid()) @db.Uuid
-//   subcategory_name String
-//   categoryId       String   @db.Uuid
-//   created_at       DateTime @default(now())
-//   updated_at       DateTime @updatedAt
-//   deleted          Boolean  @default(false)
-//   category         Category @relation(fields: [categoryId], references: [id])
-// }
-
-model AuthToken {
-  id         String    @id @default(uuid()) @db.Uuid
-  created_at DateTime  @default(now())
-  expires_at DateTime?
-  user_id    String    @db.Uuid
-  user       User      @relation(fields: [user_id], references: [id])
-}
-
-// model SafeWallet {
-//   id                String   @id @default(uuid()) @db.Uuid
-//   server_salt       String
-//   safeWalletAddress String   @unique
-//   user_EOA_address  String   @unique
-//   user_id           String   @unique @db.Uuid
-//   created_at        DateTime @default(now())
-//   updated_at        DateTime @updatedAt
-//   deleted           Boolean  @default(false)
-//   user              User     @relation(fields: [user_id], references: [id])
-//   siweNonce         String?
-
-//   @@index([user_EOA_address])
-// }
-
-// enum UserRole {
-//   Guest
-//   User
-//   Vendor
-//   Hr
-//   Admin
-// }
-
-enum UserRole {
-  Guest
-  User
-  Manager
-  Admin
-}
-
-// enum OrderStatus {
-//   PENDING
-//   COMPLETED
-//   CANCELLED
-// }
-
-// enum VendorConfirmation {
-//   INITIAL
-//   CONFIRMED
-//   DECLINED
-// }
-
-// enum ChannelStatus {
-//   PLANNED
-//   OPEN
-//   FAILED
-//   CLOSED
-// }
-
-// model Channel {
-//   id                  String             @id @default(uuid()) @db.Uuid
-//   created_at          DateTime           @default(now())
-//   updated_at          DateTime           @updatedAt
-//   channelId           String             @unique // on-chain bytes32 formatted as 0x71055430...
-//   owner               String // ethereum address
-//   balance             Decimal            @db.Decimal(78, 0)
-//   expiryTimestamp     Int
-//   sequenceNumber      Int
-//   recipients          ChannelRecipient[]
-//   userSignature       String
-//   sequencerSignature  String
-//   signatureTimestamp  Int // precision is extremely important here. we are storing a unix timestamp as integer, and can not afford to lose any leapseconds BS
-//   status              ChannelStatus
-//   channelClosureJobId String?
-
-//   @@index([owner, status])
-// }
-
-// model ChannelRecipient {
-//   id               String  @id @default(uuid()) @db.Uuid
-//   recipientAddress String
-//   balance          Decimal @db.Decimal(78, 0)
-//   channelId        String  @db.Uuid
-//   channel          Channel @relation(fields: [channelId], references: [id])
-
-//   @@unique([recipientAddress, channelId])
-//   @@index([recipientAddress])
-// }
-
-enum PreferenceKey {
-  SHOW_BALANCE
-  SHARE_FULLNAME
-  SHARE_FIRSTNAME
-  SHARE_PROFILE_IMAGE
-  SEND_UPDATES
-}
-
-model Preference {
-  id        String        @id @default(uuid()) @db.Uuid
-  userId    String        @db.Uuid
-  user      User          @relation(fields: [userId], references: [id])
-  key       PreferenceKey
-  value     String
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
-
-  @@unique([userId, key])
 }

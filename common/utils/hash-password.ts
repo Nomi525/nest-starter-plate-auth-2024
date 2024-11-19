@@ -60,6 +60,7 @@ export { hashPassword, verifyHash };
 
   console.log("Hashed Password:", hashedPassword);
 
-  const isValid = await verifyHash(hashedPassword, plainPassword);
+  // const isValid = await verifyHash(hashedPassword, plainPassword);
+  const isValid = await verifyHash(plainPassword, hashedPassword);
   console.log("Is password valid:", isValid);
 })();

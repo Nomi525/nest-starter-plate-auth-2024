@@ -50,23 +50,23 @@ export class CreateTaskDto {
 
 export class TaskQueryParamDto {
 
-  @ApiProperty({
-    name: "email",
-    required: true,
-    example: "ok@gmai.com",
-  })
+  // @ApiProperty({
+  //   name: "email",
+  //   required: true,
+  //   example: "ok@gmai.com",
+  // })
   @IsEmail()
   email: string;
 }
 
 export class listResponseDto {
-  @ApiResponseProperty({
-    example: "name",
-  })
+  // @ApiResponseProperty({
+  //   example: "name",
+  // })
   name: string;
 
-  @ApiResponseProperty({
-    example: "name",
-  })
+  // @ApiResponseProperty({
+  //   example: "name",
+  // })
   description: string;
 }

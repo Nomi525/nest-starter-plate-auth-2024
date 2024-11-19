@@ -24,7 +24,7 @@ export function PrivateGetRequest<T>(
 
   const decorators = [
     Get(path),
-    Roles(role ? role : UserRole.User),
+    Roles(role ? role : UserRole.EMPLOYEE),
     ApiOkResponse(Object.assign({ type: responseType, isArray: isArray }, summary ? { description: summary } : {})),
     ApiInternalServerErrorResponse(),
     ApiNotFoundResponse(),

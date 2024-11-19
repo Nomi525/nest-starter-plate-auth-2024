@@ -39,12 +39,11 @@ import { WebsocketModule } from "websocket/websocket.module";
     CoreModule,
     RedisModule,
     ClientConfigModule,
-    UserFacingAuthModule
-    // WebsocketModule,
-    // AuthModule
-    // EmailModule,
-    // FilesModule,
-    // DomainModule,
+    WebsocketModule,
+    FilesModule,
+    EmailModule,
+    UserFacingAuthModule,
+    DomainModule,
     // PreferencesModule,
     // CheddrNotificationModule,
     // UserFacingAuthModule,

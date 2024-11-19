@@ -19,7 +19,6 @@ import {
   JwtResponseDto,
   LoginPayloadDto,
   RegisterPayloadDto,
-  SetPasswordUsingWalletDto,
   UpgradeGuestPayloadDto
 } from "../../repositories/dtos/auth";
 import { RegisterResultDto } from "../../repositories/dtos/auth/register-result.dto";
@@ -30,6 +29,7 @@ import { UserUpdateResultDto } from "../../repositories/dtos/users/user-update-r
 import { PrismaService } from "../../repositories/prisma.service";
 import { UserNotificationGateway } from "../../websocket/user-notification-gateway.service";
 import { JwtManagmentService } from "./jwt-managment.service";
+import { parseDateString } from "../../../common/utils/dateFormat";
 
 type UserWithConfirmation = User & {
   UserConfirmation: UserConfirmation | null;
@@ -51,44 +51,44 @@ export class AuthService {
    * Reset the password using a signed SIWE message.
    * Verifies the SIWE message, and if valid, updates the user's password.
    */
-  async resetPassword(user: JwtPayloadDto, payload: SetPasswordUsingWalletDto): Promise<void> {
-    const { siweMessageDto, newAuthHash, server_salt } = payload;
+  // async resetPassword(user: JwtPayloadDto, payload: SetPasswordUsingWalletDto): Promise<void> {
+  //   const { siweMessageDto, newAuthHash, server_salt } = payload;
 
-    // Step 1: Verify the SIWE message
-    const siweMessage = new SiweMessage(siweMessageDto.message);
-    const verificationResult = await siweMessage.verify({ signature: siweMessageDto.signature });
+  //   // Step 1: Verify the SIWE message
+  //   const siweMessage = new SiweMessage(siweMessageDto.message);
+  //   const verificationResult = await siweMessage.verify({ signature: siweMessageDto.signature });
 
-    if (!verificationResult.success) {
-      throw new BadRequestException("Invalid SIWE signature");
-    }
+  //   if (!verificationResult.success) {
+  //     throw new BadRequestException("Invalid SIWE signature");
+  //   }
 
-    // Step 2: Ensure that the signer address matches the user's Ethereum address
-    // const signerAddress = siweMessage.address;
-    const userId = user.sub;
-    // const userWithWallet = await this.prisma.safeWallet.findFirst({
-    //   where: { user_id: userId },
-    //   include: { user: true }
-    // });
+  //   // Step 2: Ensure that the signer address matches the user's Ethereum address
+  //   // const signerAddress = siweMessage.address;
+  //   const userId = user.sub;
+  //   // const userWithWallet = await this.prisma.safeWallet.findFirst({
+  //   //   where: { user_id: userId },
+  //   //   include: { user: true }
+  //   // });
 
-    // if (!userWithWallet || userWithWallet.user_EOA_address !== signerAddress) {
-    //   throw new UnauthorizedException(ERRORS.UNAUTHORIZED.WALLET_MISMACH);
-    // }
+  //   // if (!userWithWallet || userWithWallet.user_EOA_address !== signerAddress) {
+  //   //   throw new UnauthorizedException(ERRORS.UNAUTHORIZED.WALLET_MISMACH);
+  //   // }
 
-    // Step 3: Hash the new password
-    const newHashedPassword = await hashPassword(newAuthHash);
+  //   // Step 3: Hash the new password
+  //   const newHashedPassword = await hashPassword(newAuthHash);
 
-    // Step 4: Update the user's password and server salt in the database
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { pwd_hash: newHashedPassword }
-    });
+  //   // Step 4: Update the user's password and server salt in the database
+  //   await this.prisma.user.update({
+  //     where: { id: userId },
+  //     data: { pwd_hash: newHashedPassword }
+  //   });
 
-    // await this.prisma.safeWallet.update({
-    //   where: { user_id: userId },
-    //   data: { server_salt }
-    // });
-    this.invalidateOtherUserSessions(user);
-  }
+  //   // await this.prisma.safeWallet.update({
+  //   //   where: { user_id: userId },
+  //   //   data: { server_salt }
+  //   // });
+  //   this.invalidateOtherUserSessions(user);
+  // }
 
   // async signInWithEthereum(payload: SiweMessageDto): Promise<JwtResponseDto> {
   //   const { message, signature } = payload;
@@ -271,7 +271,7 @@ export class AuthService {
         last_name,
         email: email,
         pwd_hash: passwordHash,
-        role: UserRole.User
+        role: UserRole.EMPLOYEE
       }
     });
 
@@ -450,25 +450,40 @@ export class AuthService {
     return { id: user.id, needs_confirm_code: needsConfirm };
   }
 
-  async getUserData(userId: string): Promise<GetPrivateUserDto> {
-    const u = await this.prisma.user.findFirstOrThrow({ where: { id: userId } });
+  async getUserData(userId: string): Promise<unknown> {
+    const userProfileData = await this.prisma.user.findFirstOrThrow({ where: { id: userId
+
+     },
+    include:
+     {
+      knownLanguages: true,
+      EmployeeShift: true,
+      EmployeeActivity: true,
+      Break: true,
+      Calls: true,
+      AssignedCalls: true,
+    }
+   });
     /*even guests who don't have names and emails might have a profile*/
-    return {
-      id: u.id,
-      first_name: u.first_name ?? "",
-      last_name: u.last_name ?? "",
-      email: u.email ?? "",
-      email_confirmed: u.email_confirmed,
-      role: u.role
-    };
+    // return {
+    //   id: userProfileData.id,
+    //   first_name: userProfileData.first_name ?? "",
+    //   last_name: userProfileData.last_name ?? "",
+    //   email: userProfileData.email ?? "",
+    //   email_confirmed: userProfileData.email_confirmed,
+    //   role: userProfileData.role
+    // };
+    return userProfileData;
   }
 
   async createGuest(): Promise<JwtResponseDto> {
     const guestUser = await this.prisma.user.create({
       data: {
+        email: "",
         first_name: "Anonymous",
         last_name: "",
-        role: UserRole.Guest
+        role: UserRole.GUEST,
+        pwd_hash: "Guest"
       }
     });
 
@@ -480,7 +495,7 @@ export class AuthService {
 
     return {
       id: guestUser.id,
-      role: UserRole.Guest,
+      role: UserRole.GUEST,
       email: "",
       email_confirmed: false,
       access_token: accessToken,
@@ -510,38 +525,67 @@ export class AuthService {
   ): Promise<[User, UserConfirmation]> {
     const [user, userConfirmation] = await this.prisma.$transaction(async prisma => {
       let user: User;
-      if (payload.role === UserRole.Manager) {
-        user = await prisma.user.create({
-          data: {
-            email: payload.email,
-            pwd_hash: passwordHash,
-            email_confirmed: false,
-            role: UserRole.Manager,
-            // safeWallet_confirmation: false
-          }
-        });
 
+      if (payload.role === UserRole.MANAGER) {
         const managerName = payload?.manager_name;
         if (!managerName) {
           throw new UnprocessableEntityException(`manager name must be specified`);
         }
-        await prisma.manager.create({
+        user = await prisma.user.create({
           data: {
-            user_id: user.id,
-            name: managerName,
-            created_at: new Date()
-          }
+            email: payload.email,
+            first_name: managerName,
+            // last_name: payload.last_name,
+            empId: payload.empId,
+            pwd_hash: passwordHash,
+            email_confirmed: false,
+            role: UserRole.MANAGER,
+            knownLanguages: {
+              connect: payload.languageIds.map(id => ({ id })),
+            },  
+            EmployeeShift: {
+              create: {
+                shift_start_date: parseDateString(payload.shift_start_date),
+                shift_end_date: parseDateString(payload.shift_end_date),
+                shift_duration: payload.shift_duration, // Replace with calculated duration if needed
+                employment_active: true,
+                employment_start_date: parseDateString(payload.employment_start_date),
+              }
+            },
+           }
         });
+
+       
+        // await prisma.user.create({
+        //   data: {
+        //     id: user.id,
+        //     first_name: managerName,
+        //     created_at: new Date()
+        //   }
+        // });
       } else {
         user = await prisma.user.create({
           data: {
             email: payload.email,
             first_name: payload.first_name,
             last_name: payload.last_name,
+            empId: payload.empId,
             pwd_hash: passwordHash,
             email_confirmed: false,
-            role: UserRole.User,
-            // safeWallet_confirmation: false
+            role: UserRole.EMPLOYEE,
+            knownLanguages: {
+              // connect: payload.languageIds.map((item: LanguageKnowsDto) => ({ id: item.id })),
+              connect: payload.languageIds.map(id => ({ id }))
+            },
+            EmployeeShift: {
+              create: {
+                shift_start_date: parseDateString(payload.shift_start_date),
+                shift_end_date: parseDateString(payload.shift_end_date),
+                shift_duration: payload.shift_duration, // Replace with calculated duration if needed
+                employment_active: true,
+                employment_start_date: parseDateString(payload.employment_start_date),
+              }
+            },
           }
         });
       }

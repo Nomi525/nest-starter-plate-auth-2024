@@ -3,7 +3,7 @@ import { IsArray } from "class-validator";
 import "reflect-metadata";
 
 type Constructor<T> = {
-  new (...args: unknown[]): T;
+  new(...args: unknown[]): T
 };
 
 function RequiredArrayProperty<T>(itemType: Constructor<T>, description: string) {
@@ -18,6 +18,7 @@ function RequiredArrayProperty<T>(itemType: Constructor<T>, description: string)
     ApiExtraModels(itemType)(target.constructor);
 
     IsArray()(target, propertyName);
+    // @IsString({ each: true })
   };
 }
 

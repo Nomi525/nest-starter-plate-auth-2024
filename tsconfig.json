@@ -31,5 +31,11 @@
     },
     "strictPropertyInitialization": false
   },
-  "include": ["src", "prisma/**/*.ts", "scripts/**/*.ts"]
+  "include": [
+  "src", 
+  "prisma/**/*.ts", 
+  "scripts/**/*.ts",
+  "common/utils/annotations/controllers/**/*.ts",
+  "common/utils/**/*.ts"
+]
 }

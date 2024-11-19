@@ -3,6 +3,8 @@ import RequiredEmailProperty from "../../../../common/utils/annotations/dto/requ
 import RequiredStringProperty from "../../../../common/utils/annotations/dto/required-string.property";
 import OptionalStringProperty from "../../../../common/utils/annotations/dto/optional-string.property";
 import RequiredProperty from "../../../../common/utils/annotations/dto/required.property";
+import RequiredArrayProperty from "../../../../common/utils/annotations/dto/required-array.property";
+import { IsString } from "class-validator";
 
 export class UpgradeGuestPayloadDto {
   // @RequiredStringProperty("User Name")
@@ -21,30 +23,49 @@ export class UpgradeGuestPayloadDto {
   readonly email: string;
 }
 
+// export class LanguageKnowsDto {
+//   @RequiredStringProperty("name of the language")
+//   id: string;
+// }
+
 export class RegisterPayloadDto {
-  @RequiredEmailProperty("User Email")
+  @RequiredEmailProperty("Employee Email")
   readonly email: string;
 
-  @OptionalStringProperty("User First Name")
+  @OptionalStringProperty("Employee First Name")
   readonly first_name: string;
 
-  @OptionalStringProperty("User Last Name")
+  @OptionalStringProperty("Employee Last Name")
   readonly last_name: string;
 
-  @RequiredStringProperty("User Auth Pass Hash")
+  @RequiredStringProperty("Employee ID")
+  readonly empId: string;
+
+ @RequiredStringProperty("User Auth Pass Hash")
   readonly pass_hash: string;
 
-  // @RequiredStringProperty("User Server Salt")
-  // readonly server_salt: string;
-
-  // @RequiredStringProperty("User EOA Address")
-  // readonly user_EOA_address: string;
-
-  @OptionalStringProperty("only for vendors to set!")
+  @OptionalStringProperty("only for manager to set!")
   readonly manager_name?: string;
+
+  @IsString({ each: true })
+  @RequiredArrayProperty(String,"languages like english hindi marathi")
+  readonly languageIds: string[];
 
   @OptionalStringProperty("role for user/Manager")
   readonly role?: UserRole;
+
+  @RequiredStringProperty("Shift start date (DD/MM/YYYY)")
+  readonly shift_start_date: string;
+
+  @RequiredStringProperty("Shift end date (DD/MM/YYYY)")
+  readonly shift_end_date: string;
+
+  @RequiredStringProperty("Employment shift duration")
+  readonly shift_duration: string;
+  
+  @RequiredStringProperty("Employment start date (DD/MM/YYYY)")
+  readonly employment_start_date: string;
+  
 }
 
 export class ChangePasswordDto {
@@ -58,26 +79,18 @@ export class ChangePasswordDto {
   // readonly server_salt: string;
 }
 
-export class SiweMessageDto {
-  @RequiredStringProperty("message that was signed")
-  message: string;
+// export class SetPasswordUsingWalletDto {
+//   @RequiredProperty("a signed message for changing the password")
+//   siweMessageDto: SiweMessageDto;
 
-  @RequiredStringProperty("signature, hex")
-  signature: string;
-}
+//   @RequiredStringProperty("new User Auth Hash")
+//   newAuthHash: string;
 
-export class SetPasswordUsingWalletDto {
-  @RequiredProperty("a signed message for changing the password")
-  siweMessageDto: SiweMessageDto;
+//   @RequiredStringProperty("new User Server Salt")
+//   server_salt: string;
+// }
 
-  @RequiredStringProperty("new User Auth Hash")
-  newAuthHash: string;
-
-  @RequiredStringProperty("new User Server Salt")
-  server_salt: string;
-}
-
-export class NonceDto {
-  @RequiredStringProperty("next nonce that will be needed for SIWE")
-  nonce: string;
-}
+// export class NonceDto {
+//   @RequiredStringProperty("next nonce that will be needed for SIWE")
+//   nonce: string;
+// }

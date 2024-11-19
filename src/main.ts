@@ -1,17 +1,3 @@
-// import { NestFactory } from "@nestjs/core";
-// import { AppModule } from "./app.module";
-// import { HttpExceptionFilter } from "./core/filters/exception.filter";
-// import { createDocument } from "./swagger/swagger";
-
-// async function bootstrap() {
-//   const app = await NestFactory.create(AppModule);
-//   app.useGlobalFilters(new HttpExceptionFilter());
-//   // app.useGlobalPipes(new EmailValidationPipe())
-//   createDocument(app);
-//   await app.listen(3000);
-// }
-// void bootstrap();
-
 import { Logger, ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 // Import your environment-specific modules

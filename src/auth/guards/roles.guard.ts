@@ -13,11 +13,11 @@ export class RolesGuard implements CanActivate {
 
   // Define the role hierarchy
   private readonly roleHierarchy: Record<UserRole, UserRole[]> = {
-    Admin: ["Admin", "Manager", "User", "Guest"],
-    Manager: ["User", "Guest"],
-    // Hr: ["Hr", "User", "Guest"],
-    User: ["User", "Guest"],
-    Guest: ["Guest"]
+    ADMIN: ["ADMIN", "MANAGER", "EMPLOYEE", "GUEST"],
+    MANAGER: ["EMPLOYEE", "MANAGER", "GUEST"],
+    // Hr: ["Hr", "Employee", "GUEST"],
+    EMPLOYEE: ["EMPLOYEE", "GUEST"],
+    GUEST: ["GUEST"]
   };
 
   canActivate(context: ExecutionContext): boolean {
